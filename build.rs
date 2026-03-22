@@ -1,17 +1,14 @@
 // TODO: Pull latest release from: https://github.com/tidwall/pogocache/releases
 
 fn main() {
-    let build_dir =
-        std::path::PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("out");
-    let lib_dir =
-        std::path::PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("lib");
-
     println!("cargo::rerun-if-changed=lib/pogocache.c");
     println!("cargo::rerun-if-changed=lib/pogocache.h");
 
-    // Tell cargo to look for shared libraries in the specified directory
-    println!("cargo:rustc-link-search=lib");
+    let build_dir = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    let lib_dir =
+        std::path::PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("lib");
 
+    // Generate glue code
     let bindings = bindgen::Builder::default()
         .header(lib_dir.join("pogocache.h").display().to_string())
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
@@ -27,8 +24,11 @@ fn main() {
         build_dir.join("bindings.rs").display()
     );
 
+    // compile and link against pogocache.c
     cc::Build::new()
         .file(lib_dir.join("pogocache.c"))
-        .out_dir(build_dir)
+        .out_dir(&build_dir)
         .compile("pogocache");
+
+    println!("cargo:rustc-link-search={}", build_dir.display());
 }
