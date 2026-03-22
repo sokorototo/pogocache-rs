@@ -27,6 +27,7 @@ fn main() {
     // compile and link against pogocache.c
     cc::Build::new()
         .file(lib_dir.join("pogocache.c"))
+        .flag("-O3")
         .out_dir(&build_dir)
         .compile("pogocache");
 
